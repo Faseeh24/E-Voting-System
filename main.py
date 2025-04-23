@@ -80,7 +80,7 @@ def add_poll():
             'created_by': session['user'],
             'closing_date': closing_date,
             'candidates': candidates,
-            'votes': {candidate: 0 for candidate in candidates},
+            'votes': {candidate.replace(" ", "_"): 0 for candidate in candidates},
             'created_at': firestore.SERVER_TIMESTAMP
         })
 
@@ -122,7 +122,7 @@ def cast_vote():
 
         # Increment the vote count for the selected candidate in the poll document
         poll_doc_ref = db.collection('polls').document(poll_id)
-        poll_doc_ref.update({f'votes.{candidate}': firestore.Increment(1)})
+        poll_doc_ref.update({f'votes.{candidate.replace(" ", "_")}': firestore.Increment(1)})
 
         # Mark the user as having voted in this poll
         votes_ref.set({'voted': True})
@@ -192,6 +192,7 @@ def view_poll_details(poll_id):
 
     # Extract vote counts
     vote_counts = poll_data.get('votes', {})
+    vote_counts = {candidate.replace("_", " "): count for candidate, count in vote_counts.items()}
 
     return render_template('poll_details.html', poll_name=poll_data['poll_name'], vote_counts=vote_counts)
 
