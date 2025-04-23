@@ -1,0 +1,139 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.form-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-title {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.input-field {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+.candidates-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-primary {
+    background: #2575fc;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn-primary:hover {
+    background: #6a11cb;
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #2575fc;
+    padding: 10px 20px;
+    border: 2px solid #2575fc;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: #2575fc;
+    color: #fff;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.error {
+    color: #ff4d4d;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.candidate-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-remove {
+    width: 30px;
+    height: 30px;
+    background: #ff4d4d;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s ease;
+}
+
+.btn-remove:hover {
+    background: #ff1a1a;
+}
+
+.candidate-field:nth-child(-n+2) .btn-remove {
+    display: none; /* Hide remove button for the first two fields */
+}

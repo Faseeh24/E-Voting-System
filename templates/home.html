@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1 class="form-title">Welcome, {{ user }}</h1>
+            <p class="info-text">What would you like to do today?</p>
+            <div class="button-group">
+                <a href="{{ url_for('add_poll') }}" class="btn-primary">Create a Poll</a>
+                <a href="{{ url_for('cast_vote') }}" class="btn-primary">Cast a Vote</a>
+                <a href="{{ url_for('view_votes') }}" class="btn-primary">View Poll Results</a>
+            </div>
+            <div class="form-actions">
+                <a href="{{ url_for('logout') }}" class="btn-secondary">Logout</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

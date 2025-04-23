@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Votes</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <style>
+        .section-title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            color: #fff;
+        }
+
+        th {
+            background: #2575fc;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-link {
+            color: #6a11cb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #fff;
+            color: #2575fc;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2575fc;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="section-title">Polls</h1>
+
+        <h2 class="section-title">Ongoing Polls</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Poll Name</th>
+                    <th>Closing Date</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for poll in ongoing_polls %}
+                    <tr>
+                        <td>{{ poll.name }}</td>
+                        <td>{{ poll.closing_date }}</td>
+                        <td>{{ poll.created_by }}</td>
+                        <td><a href="{{ url_for('view_poll_details', poll_id=poll.id) }}" class="btn-link">View Details</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 class="section-title">Past Polls</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Poll Name</th>
+                    <th>Closing Date</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for poll in past_polls %}
+                    <tr>
+                        <td>{{ poll.name }}</td>
+                        <td>{{ poll.closing_date }}</td>
+                        <td>{{ poll.created_by }}</td>
+                        <td><a href="{{ url_for('view_poll_details', poll_id=poll.id) }}" class="btn-link">View Details</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="{{ url_for('home') }}" class="btn-secondary">Back to Home</a>
+    </div>
+</body>
+</html>

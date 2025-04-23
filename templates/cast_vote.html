@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cast Vote</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <script>
+        function updateCandidates() {
+            const pollSelect = document.getElementById('poll_name');
+            const candidateSelect = document.getElementById('candidate');
+            const selectedPoll = pollSelect.options[pollSelect.selectedIndex];
+            const candidatesData = selectedPoll.dataset.candidates;
+
+            let candidates = [];
+            if (candidatesData) {
+                try {
+                    candidates = JSON.parse(candidatesData); // Safely parse JSON
+                } catch (error) {
+                    console.error("Error parsing candidates JSON:", error);
+                    candidates = []; // Fallback to an empty array
+                }
+            }
+
+            candidateSelect.innerHTML = '<option value="" disabled selected>Select a candidate</option>';
+            if (candidates.length > 0) {
+                candidateSelect.disabled = false; // Enable the dropdown
+                candidates.forEach(candidate => {
+                    const option = document.createElement('option');
+                    option.value = candidate;
+                    option.textContent = candidate;
+                    candidateSelect.appendChild(option);
+                });
+            } else {
+                candidateSelect.disabled = true; // Disable if no candidates
+            }
+        }
+
+        function validateVoteForm(event) {
+            const pollSelect = document.getElementById('poll_name');
+            const candidateSelect = document.getElementById('candidate');
+            if (!pollSelect.value || !candidateSelect.value) {
+                event.preventDefault();
+                alert('Please select a poll and a candidate.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1 class="form-title">Cast Your Vote</h1>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+            <form method="POST" onsubmit="validateVoteForm(event)">
+                <div class="form-group">
+                    <label for="poll_name" class="form-label">Select Poll:</label>
+                    <select id="poll_name" name="poll_name" class="input-field" onchange="updateCandidates()" required>
+                        <option value="" disabled selected>Select a poll</option>
+                        {% for poll in polls %}
+                            <option value='{{ poll.name }}' data-candidates='{{ poll.candidates | tojson}}'>{{ poll.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="candidate" class="form-label">Select Candidate:</label>
+                    <select id="candidate" name="candidate" class="input-field" disabled required>
+                        <option value="" disabled selected>Select a candidate</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Submit Vote</button>
+                    <a href="{{ url_for('home') }}" class="btn-secondary">Back to Home</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

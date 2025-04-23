@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poll Details</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            color: #fff;
+        }
+
+        th {
+            background: #2575fc;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #fff;
+            color: #2575fc;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2575fc;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="section-title">Poll Details</h1>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% else %}
+            <h2 class="section-title">{{ poll_name }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Votes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidate, votes in vote_counts.items() %}
+                        <tr>
+                            <td>{{ candidate }}</td>
+                            <td>{{ votes }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        <a href="{{ url_for('view_votes') }}" class="btn-secondary">Back to Polls</a>
+    </div>
+</body>
+</html>
