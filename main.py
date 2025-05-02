@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
 
 # Initialize Firestore DB
-cred = credentials.Certificate("E:/University/IS Lab/Semester Project/KEYS/Google Cloud FireStore API.json")
+cred = credentials.Certificate("./KEYS/Google Cloud FireStore API.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 users_collection = db.collection('users')
