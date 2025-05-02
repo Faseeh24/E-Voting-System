@@ -17,13 +17,19 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 users_collection = db.collection('users')
 
+
+
 @app.route('/signup', methods=['POST'])
 def signup():
-    email = request.json.get('email')
-    password = request.json.get('password')
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    username = data.get('username')
+    name = data.get('name')  # Full name
 
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    # Basic validation
+    if not email or not password or not username or not name:
+        return jsonify({"error": "Email, password, username, and name are required"}), 400
 
     # Check if user already exists
     if users_collection.document(email).get().exists:
@@ -31,13 +37,39 @@ def signup():
 
     # Hash the password before storing
     hashed_password = generate_password_hash(password)
-    users_collection.document(email).set({"password": hashed_password})
+
+    # Save user data to Firestore
+    users_collection.document(email).set({
+        "email": email,
+        "password": hashed_password,
+        "username": username,
+        "name": name
+    })
+
     return jsonify({"message": "Signup successful"}), 201
+
+@app.route('/delete_all_users', methods=['GET'])
+def delete_all_users():
+    try:
+        users = users_collection.stream()
+        deleted = 0
+
+        for user in users:
+            users_collection.document(user.id).delete()
+            deleted += 1
+
+        return jsonify({"message": f"Deleted {deleted} users"}), 200
+
+    except Exception as e:
+        print("Error deleting users:", e)
+        return jsonify({"error": "Failed to delete users"}), 500
+
 
 @app.route('/login', methods=['POST'])
 def login():
-    email = request.json.get('email')
-    password = request.json.get('password')
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
 
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
@@ -47,9 +79,15 @@ def login():
     if not user_doc.exists or not check_password_hash(user_doc.to_dict().get('password'), password):
         return jsonify({"error": "Invalid email or password"}), 401
 
+    # Retrieve the full user object
+    user_data = user_doc.to_dict()
+    print(user_data)
+
     # Set session for logged-in user
     session['user'] = email
-    return jsonify({"message": "Login successful", "user": email}), 200
+
+    return jsonify({"message": "Login successful", "user": user_data}), 200
+
 
 @app.route('/home', methods=['GET'])
 def home():
@@ -180,4 +218,4 @@ def logout():
     return jsonify({"message": "Logged out successfully"}), 200
 
 if __name__ == '__main__':
-    app.run(debug=False , port=8000)
+    app.run(debug=False , port=5000)
