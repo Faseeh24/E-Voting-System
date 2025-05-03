@@ -230,6 +230,7 @@ def cast_vote():
 
     poll_name = request.json.get('poll_name')
     candidate = request.json.get('candidate')
+    userEmail = request.json.get('userEmail')
 
     if not poll_name or not candidate:
         return jsonify({"error": "Poll name and candidate are required"}), 400
@@ -243,7 +244,7 @@ def cast_vote():
     poll_id = poll_doc.id
 
     # Check if the user has already voted in this poll
-    votes_ref = db.collection(f'polls/{poll_id}/votes').document(session['user'])
+    votes_ref = db.collection(f'polls/{poll_id}/votes').document(userEmail)
     if votes_ref.get().exists:
         return jsonify({"error": "You have already voted in this poll"}), 400
 
@@ -259,9 +260,52 @@ def cast_vote():
     poll_doc_ref.update({f'votes.{candidate.replace(" ", "_")}': firestore.Increment(1)})
 
     # Mark the user as having voted in this poll
-    votes_ref.set({'voted': True})
+    votes_ref.set({'voted': True,
+                   'candidate': candidate})
 
     return jsonify({"message": "Vote cast successfully"}), 200
+
+@app.route('/user_vote_status', methods=['GET'])
+def user_vote_status():
+    # Get user_email from query parameters
+    user_email = request.args.get('userEmail')
+
+    if not user_email:
+        return jsonify({"error": "User email is required"}), 400
+    
+    # Fetch the polls collection
+    polls_ref = db.collection('polls')
+    all_polls = polls_ref.stream()
+
+    # This will hold the user's voting status for each poll, with poll_id as the key
+    user_votes = {}
+
+    for poll_doc in all_polls:
+        poll_data = poll_doc.to_dict()
+        poll_id = poll_doc.id
+
+        # Check if the user has voted in this poll
+        votes_ref = db.collection(f'polls/{poll_id}/votes').document(user_email)
+        vote_doc = votes_ref.get()
+
+        if vote_doc.exists:
+            # The user has voted, retrieve the candidate they voted for
+            user_vote = vote_doc.to_dict().get('candidate')
+            user_votes[poll_id] = {
+                "poll_name": poll_data['poll_name'],
+                "voted": True,
+                "candidate": user_vote
+            }
+        else:
+            # The user has not voted in this poll
+            user_votes[poll_id] = {
+                "poll_name": poll_data['poll_name'],
+                "voted": False,
+                "candidate": None
+            }
+
+    return jsonify({"user_votes": user_votes}), 200
+
 
 @app.route('/view_votes', methods=['GET'])
 def view_votes():
