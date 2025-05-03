@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from blockchain import Blockchain  # Import the Blockchain class
 import time
 
+
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
@@ -17,6 +18,37 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 users_collection = db.collection('users')
 
+
+@app.route('/delete_all_users', methods=['GET'])
+def delete_all_users():
+    try:
+        users = users_collection.stream()
+        deleted = 0
+
+        for user in users:
+            users_collection.document(user.id).delete()
+            deleted += 1
+
+        return jsonify({"message": f"Deleted {deleted} users"}), 200
+
+    except Exception as e:
+        print("Error deleting users:", e)
+        return jsonify({"error": "Failed to delete users"}), 500
+
+@app.route("/getusers", methods=['GET'])
+def get_users():
+    try:
+        users = users_collection.stream()
+        user_list = []
+
+        for user in users:
+            user_list.append(user.to_dict())
+
+        return jsonify(user_list), 200
+
+    except Exception as e:
+        print("Error fetching users:", e)
+        return jsonify({"error": "Failed to fetch users"}), 500
 
 
 @app.route('/signup', methods=['POST'])
@@ -48,22 +80,6 @@ def signup():
 
     return jsonify({"message": "Signup successful"}), 201
 
-@app.route('/delete_all_users', methods=['GET'])
-def delete_all_users():
-    try:
-        users = users_collection.stream()
-        deleted = 0
-
-        for user in users:
-            users_collection.document(user.id).delete()
-            deleted += 1
-
-        return jsonify({"message": f"Deleted {deleted} users"}), 200
-
-    except Exception as e:
-        print("Error deleting users:", e)
-        return jsonify({"error": "Failed to delete users"}), 500
-
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -88,6 +104,33 @@ def login():
 
     return jsonify({"message": "Login successful", "user": user_data}), 200
 
+@app.route('/update-user', methods=['POST'])
+def update_user():
+    data = request.get_json()
+    email = data.get('email')
+    name = data.get('name')
+    password = data.get('password')
+
+    if not email or not name or not password:
+        return jsonify({"error": "Email, name, and password are required"}), 400
+
+    user_ref = users_collection.document(email)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return jsonify({"error": "User not found"}), 404
+
+    # Hash the new password
+    hashed_password = generate_password_hash(password)
+
+    # Update the user document
+    user_ref.update({
+        "name": name,
+        "password": hashed_password
+    })
+
+    return jsonify({"message": "User info updated successfully"}), 200
+
 
 @app.route('/home', methods=['GET'])
 def home():
@@ -95,14 +138,31 @@ def home():
         return jsonify({"error": "Unauthorized"}), 401
     return jsonify({"message": "Welcome to the home page", "user": session['user']}), 200
 
+@app.route('/get_polls', methods=['GET'])
+def get_polls():
+    try:
+        polls_ref = db.collection('polls')
+        polls = polls_ref.stream()
+
+        poll_list = []
+        for poll in polls:
+            poll_data = poll.to_dict()
+            poll_data['id'] = poll.id  # Include document ID
+            poll_list.append(poll_data)
+
+        return jsonify({"polls": poll_list}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/add_poll', methods=['POST'])
 def add_poll():
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
 
     poll_name = request.json.get('poll_name')
     closing_date = request.json.get('closing_date')
     candidates = request.json.get('candidates')
+    creator = request.json.get('creator')
 
     if not poll_name or not closing_date or not candidates:
         return jsonify({"error": "All fields are required"}), 400
@@ -111,7 +171,7 @@ def add_poll():
     poll_ref = db.collection('polls').document()
     poll_ref.set({
         "poll_name": poll_name,
-        'created_by': session['user'],
+        'created_by': creator,
         'closing_date': closing_date,
         'candidates': candidates,
         'votes': {candidate.replace(" ", "_"): 0 for candidate in candidates},
@@ -119,6 +179,49 @@ def add_poll():
     })
 
     return jsonify({"message": "Poll created successfully"}), 201
+
+@app.route('/get_user_polls', methods=['GET'])
+def get_user_polls():
+    user_email = request.args.get('user')
+    if not user_email:
+        return jsonify({"error": "User not provided"}), 400
+
+    polls_ref = db.collection('polls').where('created_by', '==', user_email)
+    polls = polls_ref.stream()
+    
+    poll_list = []
+    for poll in polls:
+        data = poll.to_dict()
+        data['id'] = poll.id
+        poll_list.append(data)
+
+    return jsonify({"polls": poll_list}), 200
+
+import time
+
+@app.route("/ongoing_polls", methods=["GET"])
+def get_ongoing_polls():
+    today_timestamp = time.time()
+    polls_ref = db.collection("polls")
+    all_polls = polls_ref.stream()
+
+    ongoing_polls = []
+    for poll_doc in all_polls:
+        poll_data = poll_doc.to_dict()
+        try:
+            # Convert closing_date (e.g., "2025-05-17") to timestamp
+            closing_date_str = poll_data.get("closing_date", "")
+            closing_struct = time.strptime(closing_date_str, "%Y-%m-%d")
+            closing_timestamp = time.mktime(closing_struct)
+
+            if closing_timestamp >= today_timestamp:
+                poll_data["id"] = poll_doc.id
+                ongoing_polls.append(poll_data)
+        except Exception as e:
+            continue  # skip invalid entries
+
+    return jsonify({"ongoing_polls": ongoing_polls})
+
 
 @app.route('/cast_vote', methods=['POST'])
 def cast_vote():
