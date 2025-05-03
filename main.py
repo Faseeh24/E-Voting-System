@@ -218,7 +218,31 @@ def get_past_polls():
         except Exception as e:
             continue  # skip invalid or malformed dates
 
-    return jsonify({"polls": past_polls})
+    return jsonify({"past_polls": past_polls})
+
+
+@app.route("/ongoing_polls", methods=["GET"])
+def get_ongoing_polls():
+    today_timestamp = time.time()
+    polls_ref = db.collection("polls")
+    all_polls = polls_ref.stream()
+
+    ongoing_polls = []
+    for poll_doc in all_polls:
+        poll_data = poll_doc.to_dict()
+        try:
+            # Convert closing_date (e.g., "2025-05-17") to timestamp
+            closing_date_str = poll_data.get("closing_date", "")
+            closing_struct = time.strptime(closing_date_str, "%Y-%m-%d")
+            closing_timestamp = time.mktime(closing_struct)
+
+            if closing_timestamp >= today_timestamp:
+                poll_data["id"] = poll_doc.id
+                ongoing_polls.append(poll_data)
+        except Exception as e:
+            continue  # skip invalid entries
+
+    return jsonify({"ongoing_polls": ongoing_polls})
 
 
 @app.route('/cast_vote', methods=['POST'])
