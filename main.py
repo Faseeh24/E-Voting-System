@@ -5,6 +5,27 @@ from firebase_admin import credentials, firestore
 from werkzeug.security import generate_password_hash, check_password_hash
 from blockchain import Blockchain  # Import the Blockchain class
 import time
+from Crypto.Cipher import AES
+import base64
+import json
+from Crypto.Util.Padding import pad, unpad
+
+# Load stored key and IV
+with open("./KEYS/AES_KEY.json", "r") as f:
+    config = json.load(f)
+    key = base64.b64decode(config["key"])
+    iv = base64.b64decode(config["iv"])
+
+def encrypt_AES(plaintext: str) -> str:
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    ct_bytes = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
+    return base64.b64encode(ct_bytes).decode()
+
+def decrypt_AES(ciphertext_b64: str) -> str:
+    ct = base64.b64decode(ciphertext_b64)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    pt = unpad(cipher.decrypt(ct), AES.block_size)
+    return pt.decode()
 
 
 # Initialize Flask app
@@ -63,6 +84,7 @@ def signup():
     if not email or not password or not username or not name:
         return jsonify({"error": "Email, password, username, and name are required"}), 400
 
+    email = encrypt_AES(email)
     # Check if user already exists
     if users_collection.document(email).get().exists:
         return jsonify({"error": "User already exists"}), 400
@@ -74,8 +96,8 @@ def signup():
     users_collection.document(email).set({
         "email": email,
         "password": hashed_password,
-        "username": username,
-        "name": name
+        "username": encrypt_AES(username),
+        "name": encrypt_AES(name)
     })
 
     return jsonify({"message": "Signup successful"}), 201
@@ -90,6 +112,8 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
+    email = encrypt_AES(email)
+
     # Verify user credentials
     user_doc = users_collection.document(email).get()
     if not user_doc.exists or not check_password_hash(user_doc.to_dict().get('password'), password):
@@ -97,10 +121,12 @@ def login():
 
     # Retrieve the full user object
     user_data = user_doc.to_dict()
-    print(user_data)
+    user_data['email'] = decrypt_AES(user_data['email'])
+    user_data['username'] = decrypt_AES(user_data['username'])
+    user_data['name'] = decrypt_AES(user_data['name'])
 
     # Set session for logged-in user
-    session['user'] = email
+    session['user'] = decrypt_AES(email)
 
     return jsonify({"message": "Login successful", "user": user_data}), 200
 
@@ -114,7 +140,7 @@ def update_user():
     if not email or not name or not password:
         return jsonify({"error": "Email, name, and password are required"}), 400
 
-    user_ref = users_collection.document(email)
+    user_ref = users_collection.document(encrypt_AES(email))
     user_doc = user_ref.get()
 
     if not user_doc.exists:
@@ -125,18 +151,12 @@ def update_user():
 
     # Update the user document
     user_ref.update({
-        "name": name,
+        "name": encrypt_AES(name),
         "password": hashed_password
     })
 
     return jsonify({"message": "User info updated successfully"}), 200
 
-
-@app.route('/home', methods=['GET'])
-def home():
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-    return jsonify({"message": "Welcome to the home page", "user": session['user']}), 200
 
 @app.route('/get_polls', methods=['GET'])
 def get_polls():
